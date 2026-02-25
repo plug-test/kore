@@ -1,4 +1,4 @@
-name: Rakuten Room Auto Like
+name: Auto Like
 on:
   # schedule:
   #   - cron: '0 0 * * *' # 毎日日本時間 9:00 に実行
