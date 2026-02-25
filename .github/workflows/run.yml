@@ -1,21 +1,21 @@
-# name: Rakuten Room Auto Like
-# on:
-#   schedule:
-#     - cron: '0 0 * * *' # 毎日日本時間 9:00 に実行
-#   workflow_dispatch: # 手動実行ボタン
+name: Rakuten Room Auto Like
+on:
+  # schedule:
+  #   - cron: '0 0 * * *' # 毎日日本時間 9:00 に実行
+  workflow_dispatch: # 手動実行ボタン
 
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v3
-#       - name: Set up Python
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.9'
-#       - name: Install dependencies
-#         run: pip install selenium
-#       - name: Run script
-#         env:
-#           RAKUTEN_CONFIG_JSON: ${{ secrets.RAKUTEN_CONFIG_JSON }}
-#         run: python main.py
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install selenium
+      - name: Run script
+        env:
+          RAKUTEN_CONFIG_JSON: ${{ secrets.RAKUTEN_CONFIG_JSON }}
+        run: python main.py
