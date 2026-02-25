@@ -18,4 +18,4 @@ jobs:
       - name: Run script
         env:
           RAKUTEN_CONFIG_JSON: ${{ secrets.RAKUTEN_CONFIG_JSON }}
-        run: python main.py
+        run: python GOOD.py
