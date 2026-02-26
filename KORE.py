@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.service import Service
 
 # --- 設定の読み込み ---
 def load_settings():
-    # GitHub Secrets（環境変数）から取得するか、ローカルの config.json を参照する
+    # GitHub Secrets（環境変数）またはローカルの config.json を参照
     config_env = os.getenv('RAKUTEN_CONFIG_JSON')
     if config_env:
         try:
@@ -36,7 +36,8 @@ options = webdriver.chrome.options.Options()
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-# ユーザーデータディレクトリの設定
+
+# 実行環境に合わせたプロファイル設定
 if config.get("user_data_dir") and os.path.exists(config["user_data_dir"]):
     options.add_argument(f'--user-data-dir={config["user_data_dir"]}')
 
@@ -47,11 +48,19 @@ def login():
     try:
         print("ログインを開始します...")
         driver.get('https://room.rakuten.co.jp/common/login?redirectafterlogin=/items')
-        time.sleep(2)
-        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'username'))).send_keys(config["email"])
+        
+        # ユーザー名入力
+        username_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'username')))
+        username_field.clear()
+        username_field.send_keys(config["email"])
+        time.sleep(1)
         driver.find_element(By.ID, 'cta001').click()
-        time.sleep(2)
-        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'password'))).send_keys(config["password"])
+        
+        # パスワード入力
+        password_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'password')))
+        password_field.clear()
+        password_field.send_keys(config["password"])
+        time.sleep(1)
         driver.find_element(By.ID, 'cta011').click()
         time.sleep(5)
     except Exception as e:
@@ -59,73 +68,68 @@ def login():
 
 def search():
     try:
-        # config.jsonの keyword から取得
+        # config.json 内の keyword を使用
         tag = config.get("keyword", "楽天")
         print(f"検索ワード: {tag}")
         search_url = f'https://room.rakuten.co.jp/search/item?keyword={tag}&original_photo=0'
         driver.get(search_url)
         WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.item-navigation.ng-scope')))
+        return tag
     except Exception as e:
         print(f"検索エラー: {e}")
         return None
-    return tag
 
 def kore(set_num):
     cnt = 0
     num = 0
     while set_num > cnt:
         try:
-            # スクロールして要素を読み込み
+            # 次の要素までスクロール
             scroll_check = 0
             while len(driver.find_elements(By.CSS_SELECTOR, '.item-navigation.ng-scope')) <= num:
                 if scroll_check >= 6: return cnt
                 driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
                 scroll_check += 1
-                time.sleep(5)
+                time.sleep(3)
 
             items = driver.find_elements(By.CSS_SELECTOR, '.item-navigation.ng-scope')
-            target = items[num].find_elements(By.TAG_NAME, 'a')[0]
+            # 「コレ！」ボタンの判定
+            target_btn = items[num].find_elements(By.TAG_NAME, 'a')[0]
 
-            # 「コレ！」ボタンが押せるかチェック
-            if target.get_attribute('class') == 'icon-hand left':
-                target.click()
+            if target_btn.get_attribute('class') == 'icon-hand left':
+                target_btn.click()
                 
-                # モーダル待ち
+                # 商品名の読み込みを待機
                 WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.item-name.ng-binding')))
                 
-                # 上限チェック
-                if len(driver.find_elements(By.CSS_SELECTOR, '.dialog-container.modal-popup')) > 0:
-                    print("「コレ！」の上限に達しました。")
-                    break
-                
-                # すでにコレ！済みの場合
+                # すでにコレ！済みでないか確認
                 if len(driver.find_elements(By.CLASS_NAME, 'ok')) > 0:
                     driver.find_element(By.CLASS_NAME, 'ok').click()
                 else:
-                    # メモとハッシュタグを入力
+                    # 投稿内容の構成
                     memo = config.get("memo", "")
                     title = driver.find_element(By.CSS_SELECTOR, '.item-name.ng-binding').text + "\n" + memo
-                    hashtags = "\n\n【タグ検索用】\n#39ショップ #おすすめ #買ってよかった #おしゃれ #人気 #ランキング #ずっと欲しかった #あったら便利 #ポイント消化 #買い回り #買いまわり #お買い物マラソン #楽天スーパーSALE #お買い物メモ"
+                    hashtags = "\n\n#39ショップ #おすすめ #買ってよかった #おしゃれ #人気 #ランキング #ずっと欲しかった #あったら便利 #ポイント消化 #買い回り #買いまわり #お買い物マラソン #楽天スーパーSALE #お買い物メモ"
                     
                     driver.find_element(By.ID, 'collect-content').send_keys(title + hashtags)
                     time.sleep(1)
                     
-                    # 完了ボタン
+                    # 完了ボタンクリック
                     driver.find_element(By.CSS_SELECTOR, '.button.button-red.collect-btn').click()
                     
-                    # 完了後の×ボタン
+                    # 完了後の×ボタンをクリックして閉じる
                     WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CLASS_NAME, 'icon-cross-normal')))
                     driver.find_element(By.CLASS_NAME, 'icon-cross-normal').click()
                     
                     cnt += 1
                     print(f"コレ！完了: {cnt}件目")
-                    # ランダム待機
-                    time.sleep(random.randint(15, 30))
+                    # 完了後の待機時間を削除（最短の猶予のみ）
+                    time.sleep(1)
             else:
-                time.sleep(1)
+                time.sleep(0.5)
             num += 1
         except Exception as e:
-            print(f"ループ中にエラー（スキップします）: {e}")
+            print(f"エラー（スキップ）: {e}")
             num += 1
             continue
     return cnt
@@ -136,9 +140,9 @@ if __name__ == '__main__':
         login()
         tag_used = search()
         if tag_used:
-            # 実行件数（今回は1件に設定されていますが適宜変更してください）
+            # 実行回数（1件）
             result_cnt = kore(1)
-            print(f"結果: 「{tag_used}」で {result_cnt} 商品を「コレ！」しました。")
+            print(f"完了: 「{tag_used}」で {result_cnt} 商品を「コレ！」しました。")
     finally:
         driver.quit()
         print(f"--- 終了: {dt.now()} ---")
