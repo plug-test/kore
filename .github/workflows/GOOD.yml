@@ -1,8 +1,10 @@
 name: Auto Like
 on:
-  # schedule:
-  #   - cron: '0 0 * * *' # 毎日日本時間 9:00 に実行
-  workflow_dispatch: # 手動実行ボタン
+  schedule:
+    # 日本時間 1, 3, 5, 7, 9, 11, 13, 15, 17, 19時に実行
+    # UTCでは 16, 18, 20, 22, 0, 2, 4, 6, 8, 10時になります
+    - cron: '0 0,2,4,6,8,10,16,18,20,22 * * *'
+  workflow_dispatch: # 手動実行ボタンも残しておきます
 
 jobs:
   build:
