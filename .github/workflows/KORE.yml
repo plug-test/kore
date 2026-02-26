@@ -19,4 +19,4 @@ jobs:
       - name: Run script
         env:
           RAKUTEN_CONFIG_JSON: ${{ secrets.RAKUTEN_CONFIG_JSON }}
-        run: python post.py
+        run: python KORE.py
