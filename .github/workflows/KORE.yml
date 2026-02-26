@@ -1,0 +1,22 @@
+name: Auto Kore
+on:
+  schedule:
+    # 日本時間 0:05 に実行 (UTCでは前日の 15:05)
+    - cron: '5 15 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install selenium
+      - name: Run script
+        env:
+          RAKUTEN_CONFIG_JSON: ${{ secrets.RAKUTEN_CONFIG_JSON }}
+        run: python post.py
