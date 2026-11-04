@@ -67,11 +67,19 @@ def login():
         click_button('cta001')
 
         # パスワード入力
-        # name="password" の要素が複数あることがあるので、画面に見えているものを使う
-        password_field = WebDriverWait(driver, 15).until(
-            lambda d: next((e for e in d.find_elements(By.CSS_SELECTOR, 'input[name="password"], input[type="password"]') if e.is_displayed()), False))
-        password_field.clear()
-        password_field.send_keys(config["password"])
+        # パスワード欄は Selenium から「非表示」と判定されることがあるので、パスワード画面の「次へ」が出るのを待つ
+        WebDriverWait(driver, 15).until(lambda d: d.find_element(By.ID, 'cta011').is_displayed())
+        password_field = driver.find_element(By.NAME, 'password')
+        try:
+            password_field.clear()
+            password_field.send_keys(config["password"])
+        except WebDriverException:
+            driver.execute_script(
+                "const el = arguments[0];"
+                "Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, arguments[1]);"
+                "el.dispatchEvent(new Event('input', {bubbles: true}));"
+                "el.dispatchEvent(new Event('change', {bubbles: true}));",
+                password_field, config["password"])
         time.sleep(1)
         click_button('cta011')
 
