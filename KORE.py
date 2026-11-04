@@ -82,6 +82,7 @@ def login():
                 password_field, config["password"])
         time.sleep(1)
         click_button('cta011')
+        print("パスワードを送信しました")
 
         # ROOMに戻ってこられたらログイン成功
         WebDriverWait(driver, 30).until(lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/login' not in d.current_url)
@@ -90,6 +91,7 @@ def login():
     except Exception as e:
         print(f"ログインエラー: {e}")
         print(f"現在のURL: {driver.current_url}")
+        print("画面の文字: " + driver.find_element(By.TAG_NAME, 'body').text.replace('\n', ' / ')[:500])
         # 原因調査用に、画面上の入力欄とボタンの状態を出しておく
         for el in driver.find_elements(By.CSS_SELECTOR, 'input, [role="button"]'):
             print(f"  {el.tag_name} id={el.get_attribute('id')} name={el.get_attribute('name')} type={el.get_attribute('type')} 表示={el.is_displayed()} 文字={el.text[:20]!r}")
