@@ -84,8 +84,8 @@ def login():
         click_button('cta011')
         print("パスワードを送信しました")
 
-        # ROOMに戻ってこられたらログイン成功
-        back_to_room = lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/login' not in d.current_url
+        # ROOMに戻ってこられたらログイン成功（/common/callback などログイン処理途中のページは除く）
+        back_to_room = lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/common/' not in d.current_url
         try:
             WebDriverWait(driver, 30).until(back_to_room)
         except TimeoutException:
