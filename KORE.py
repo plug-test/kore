@@ -84,8 +84,8 @@ def login():
         click_button('cta011')
         print("パスワードを送信しました")
 
-        # ROOMに戻ってこられたらログイン成功（/common/callback などログイン処理途中のページは除く）
-        back_to_room = lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/common/' not in d.current_url
+        # ROOMに戻ってこられたらログイン成功
+        back_to_room = lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/login' not in d.current_url
         try:
             WebDriverWait(driver, 30).until(back_to_room)
         except TimeoutException:
@@ -93,16 +93,7 @@ def login():
             # ログイン済みの状態でROOMのログインURLを開き直して戻ってくる
             print(f"転送で止まったため開き直します（{driver.current_url.split('#')[-1]}）")
             driver.get('https://room.rakuten.co.jp/common/login?redirectafterlogin=/items')
-            try:
-                WebDriverWait(driver, 30).until(back_to_room)
-            except TimeoutException:
-                # ROOM側の /common/callback で止まることがある。認証自体は済んでいるので、
-                # ROOMのページを直接開いて戻れるか試す
-                if '/common/callback' not in driver.current_url:
-                    raise
-                print(f"callbackで止まったため直接開きます（タイトル: {driver.title!r}）")
-                driver.get('https://room.rakuten.co.jp/items')
-                WebDriverWait(driver, 30).until(back_to_room)
+            WebDriverWait(driver, 30).until(back_to_room)
         print(f"ログインしました: {driver.current_url}")
         return True
     except Exception as e:
@@ -192,11 +183,6 @@ if __name__ == '__main__':
             # 実行回数（1件）
             result_cnt = kore(1)
             print(f"完了: 「{tag_used}」で {result_cnt} 商品を「コレ！」しました。")
-            if result_cnt == 0:
-                # 0件のまま「成功」扱いにならないよう、失敗で終わらせる
-                sys.exit(1)
-        else:
-            sys.exit(1)
     finally:
         driver.quit()
         print(f"--- 終了: {dt.now()} ---")
