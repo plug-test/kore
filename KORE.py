@@ -67,7 +67,9 @@ def login():
         click_button('cta001')
 
         # パスワード入力
-        password_field = WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.NAME, 'password')))
+        # name="password" の要素が複数あることがあるので、画面に見えているものを使う
+        password_field = WebDriverWait(driver, 15).until(
+            lambda d: next((e for e in d.find_elements(By.CSS_SELECTOR, 'input[name="password"], input[type="password"]') if e.is_displayed()), False))
         password_field.clear()
         password_field.send_keys(config["password"])
         time.sleep(1)
@@ -80,6 +82,9 @@ def login():
     except Exception as e:
         print(f"ログインエラー: {e}")
         print(f"現在のURL: {driver.current_url}")
+        # 原因調査用に、画面上の入力欄とボタンの状態を出しておく
+        for el in driver.find_elements(By.CSS_SELECTOR, 'input, [role="button"]'):
+            print(f"  {el.tag_name} id={el.get_attribute('id')} name={el.get_attribute('name')} type={el.get_attribute('type')} 表示={el.is_displayed()} 文字={el.text[:20]!r}")
         return False
 
 def search():
