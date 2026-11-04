@@ -36,6 +36,7 @@ options = webdriver.chrome.options.Options()
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--window-size=1280,1000')
 
 # 実行環境に合わせたプロファイル設定
 if config.get("user_data_dir") and os.path.exists(config["user_data_dir"]):
@@ -44,27 +45,42 @@ if config.get("user_data_dir") and os.path.exists(config["user_data_dir"]):
 driver = webdriver.Chrome(options=options)
 driver.implicitly_wait(10)
 
+def click_button(button_id):
+    # 言語切り替えの案内バナーがボタンに重なってクリックできないため、取り除いてから押す
+    driver.execute_script("document.querySelectorAll('r10-language-disclaimer').forEach(e => e.remove());")
+    button = driver.find_element(By.ID, button_id)
+    try:
+        button.click()
+    except WebDriverException:
+        driver.execute_script("arguments[0].click();", button)
+
 def login():
     try:
         print("ログインを開始します...")
         driver.get('https://room.rakuten.co.jp/common/login?redirectafterlogin=/items')
-        
+
         # ユーザー名入力
         username_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'username')))
         username_field.clear()
         username_field.send_keys(config["email"])
         time.sleep(1)
-        driver.find_element(By.ID, 'cta001').click()
-        
+        click_button('cta001')
+
         # パスワード入力
-        password_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.NAME, 'password')))
+        password_field = WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.NAME, 'password')))
         password_field.clear()
         password_field.send_keys(config["password"])
         time.sleep(1)
-        driver.find_element(By.ID, 'cta011').click()
-        time.sleep(5)
+        click_button('cta011')
+
+        # ROOMに戻ってこられたらログイン成功
+        WebDriverWait(driver, 30).until(lambda d: d.current_url.startswith('https://room.rakuten.co.jp/') and '/login' not in d.current_url)
+        print("ログインしました")
+        return True
     except Exception as e:
         print(f"ログインエラー: {e}")
+        print(f"現在のURL: {driver.current_url}")
+        return False
 
 def search():
     try:
@@ -137,7 +153,9 @@ def kore(set_num):
 if __name__ == '__main__':
     print(f"--- 実行開始: {dt.now()} ---")
     try:
-        login()
+        if not login():
+            # ログインできないまま「成功」扱いにならないよう、失敗で終わらせる
+            sys.exit(1)
         tag_used = search()
         if tag_used:
             # 実行回数（1件）
